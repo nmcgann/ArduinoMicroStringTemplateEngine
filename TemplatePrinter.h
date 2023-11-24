@@ -1,18 +1,33 @@
 //#################################################################################################
-// Very modified Template version re-written to use the same logic in all routines.
-// Callback verions to call routines matching each template variable.
-// Placeholders can run from 0 to 99. Can handle single digit and two digit versions.
+// Very modified Template printer 
+// 
+// - Re-written to use the same logic in all routines (state machine).
+// - C++ templated to handle variable array sizes without using sizeof()
+// - Callback verions added to call routines corresponding to each template placeholder.
+// - Placeholders can run from 0 to 99. Can handle single digit and two digit versions.
+// - Callback pointer table can be in PROGMEM when template strings are also in PROGMEM.
+// - Illegal placeholders are ignored.
+// - Single .h file, no .cpp.
+//
+// The callback idea allows a printed string to be self-populating as the callback routines
+// can go off and fetch data to print. The callbacks are passed the Print& pr parameter so
+// can do pr.print() themselves.
+//
+// The point behind the re-write was to allow a simple event-driven refresh of an LCD screen page 
+// where the values of variables were automatically fetched and formatted and inserted into the 
+// shell of the screen text. 
+//
 //#################################################################################################
 #pragma once
 
 #include <Print.h>
 
 /**
- * The original documentaion below:
+ * The original documentation below:
  *
  * A very simplistic string template engine that helps preventing the usage of string function 
  * to reduce heap fragmentation.  
- * Idea is: give it a Print - object that is the output target and a template strig along 
+ * Idea is: give it a Print - object that is the output target and a template string along 
  * with the values to fill in the place holder.
  *
  * The "%0" to "%9" are the placeholder for the runtime supplied values.
@@ -57,24 +72,28 @@ class TemplatePrinter {
 public:
   /** 
    *  Prints the i_template string (RAM) to pr and replaces occurences of "%0" - "%9" by the strings from the i_values table.
-   *  '%' signs can be excaped by "%%" but will printed on there own if the second character is not a digit
+   *  '%' signs can be escaped by "%%" but will printed on there own if the second character is not a digit
+   *  Extended so %10 - %99 can be used. Note that %NN where NN doesn't exist are just skipped.
    */
 
   template <typename T, size_t N> 
   static void printTo(Print& pr, const char* i_template, T* const (&i_values)[N]);
 
-//new - added version that calls a callback for each template parameter
+//Added version that calls a callback from a table of pointers to functions for each template parameter
+//pointer table is in ordinary memory
   template <typename T, size_t N> 
   static void printToCallbacks(Print& pr, const char* i_template,  T* const (&i_values)[N]);
 
   /**
    *  Prints the i_template string (FLASH) to pr and replaces occurences of "%0" - "%9" by the strings from the i_values table.
-   *  '%' signs can be excaped by "%%" but will printed on there own if the second character is not a digit
+   *  '%' signs can be escaped by "%%" but will printed on there own if the second character is not a digit
+   *  Extended so %10 - %99 can be used. Note that %NN where NN doesn't exist are just skipped.
    */
   template <typename T, size_t N> 
   static void printTo(Print& pr, const __FlashStringHelper* i_template, T* const (&i_values)[N]);
   
-//new - added version that calls a callback for each template parameter
+//Added version that calls a callback from a table of pointers to functions for each template parameter
+//pointer table is in PROGMEM
   template <typename T, size_t N> 
   static void printToCallbacks(Print& pr, const __FlashStringHelper* i_template, T* const (&i_values)[N]);
 
